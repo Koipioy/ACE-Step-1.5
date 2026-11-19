@@ -1891,6 +1891,7 @@ class AceStepConditionGenerationModel(AceStepPreTrainedModel):
         dcw_wavelet: str = "haar",
         **kwargs,
     ):
+        """Generate audio latents by denoising along a diffusion timestep schedule."""
         # Backward-compat: accept the old misspelled key "diffusion_guidance_sale"
         # so that callers that have not yet updated their code still work correctly.
         # Note: if both keys are passed simultaneously, the old key wins because Python
@@ -2111,9 +2112,9 @@ class AceStepConditionGenerationModel(AceStepPreTrainedModel):
                     # Stochastic Differential Equation: predict clean, then re-add noise
                     t_curr_bsz = t_curr * torch.ones((bsz,), device=device, dtype=dtype)
                     pred_clean = self.get_x0_from_noise(xt, vt, t_curr_bsz)
-                    next_timestep = 1.0 - (float(step_idx + 1) / infer_steps)
-                    xt = self.renoise(pred_clean, next_timestep)
-                    t_after_step = next_timestep
+                    # Match the noise level of the next scheduled decoder evaluation.
+                    xt = self.renoise(pred_clean, t_prev)
+                    t_after_step = t_prev
                 elif use_heun and infer_method == "ode":
                     # Heun (second-order) ODE step via trapezoidal rule
                     dt = t_curr - t_prev
