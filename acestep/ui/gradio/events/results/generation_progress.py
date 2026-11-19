@@ -16,6 +16,7 @@ from loguru import logger
 
 from acestep.inference import generate_music, GenerationParams, GenerationConfig
 from acestep.audio_utils import save_audio
+from acestep.constants import TASK_INSTRUCTIONS
 from acestep.gpu_config import (
     get_global_gpu_config,
     check_duration_limit,
@@ -120,6 +121,12 @@ def generate_with_progress(
     actual_inference_steps = len(parsed_timesteps) - 1 if parsed_timesteps is not None else inference_steps
 
     task_type = resolve_no_fsq_task_type(task_type, bool(no_fsq))
+
+    if task_type == "repaint":
+        # Hidden Remix settings can switch the sampler to text-to-music conditioning.
+        instruction_display_gen = TASK_INSTRUCTIONS["repaint"]
+        audio_cover_strength = 1.0
+        cover_noise_strength = 0.0
 
     # text2music never uses src_audio EXCEPT when flow_edit_morph is on:
     # the morph overlay needs the source audio for ``zt_src``/``zt_tar``

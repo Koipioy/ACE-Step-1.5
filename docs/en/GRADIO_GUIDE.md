@@ -164,6 +164,10 @@ Regenerate a specific time segment of audio while keeping the rest intact.
 4. Write a Caption describing the desired content for the repainted section
 5. Click **Generate Music**
 
+For a lyric edit, keep the complete song lyrics in **Lyrics** and replace the lines that fall
+inside the selected time range. Select a complete sung phrase. Turn off **Language Auto** and set
+**Vocal Language** to match the lyrics.
+
 **Use cases:** Fixing problematic sections, changing lyrics in a segment, extending songs.
 
 ### Extract Mode (Base Model Only)
