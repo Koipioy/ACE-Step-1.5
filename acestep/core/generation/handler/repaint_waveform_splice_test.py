@@ -135,6 +135,42 @@ class TestApplyRepaintWaveformSplice(unittest.TestCase):
         self.assertAlmostEqual(result[0, 0, start - 1].item(), 5.0)
         self.assertAlmostEqual(result[0, 0, start].item(), 2.0)
 
+    def test_preserved_repaint_keeps_boundary_fades_inside_selection(self) -> None:
+        """Use original samples outside each batch item's selected range."""
+        pred, src = self._make_tensors(B=2, samples=100)
+        starts, ends = [20, 35], [50, 39]
+        result = apply_repaint_waveform_splice(
+            pred, src, [20.0, 35.0], [50.0, 39.0], sample_rate=1,
+            crossfade_duration=10.0, preserve_source=True,
+        )
+        for index, (start, end) in enumerate(zip(starts, ends)):
+            self.assertTrue(torch.equal(result[index, :, :start], src[index, :, :start]))
+            self.assertTrue(torch.equal(result[index, :, end:], src[index, :, end:]))
+            self.assertTrue(
+                (result[index, :, start:end] < src[index, :, start:end]).any()
+            )
+        torch.testing.assert_close(result[0, :, 30:40], pred[0, :, 30:40])
+
+    def test_preserved_repaint_drops_decoded_padding(self) -> None:
+        """Keep the padded source length when the decoder returns extra samples."""
+        pred, _ = self._make_tensors(samples=5000)
+        _, src = self._make_tensors(samples=4800)
+        result = apply_repaint_waveform_splice(
+            pred, src, [0.02], [0.08], crossfade_duration=0.0, preserve_source=True,
+        )
+        self.assertEqual(result.shape, src.shape)
+        torch.testing.assert_close(result[..., 3840:], src[..., 3840:])
+
+    def test_preserved_repaint_restores_source_tail_after_short_decode(self) -> None:
+        """A short decoder output must retain the last samples of the source."""
+        pred, _ = self._make_tensors(samples=4800)
+        _, src = self._make_tensors(samples=5000)
+        result = apply_repaint_waveform_splice(
+            pred, src, [0.02], [0.08], crossfade_duration=0.0, preserve_source=True,
+        )
+        self.assertEqual(result.shape, src.shape)
+        torch.testing.assert_close(result[..., 3840:], src[..., 3840:])
+
 
 if __name__ == "__main__":
     unittest.main()

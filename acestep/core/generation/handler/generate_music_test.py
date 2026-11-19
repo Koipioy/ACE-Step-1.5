@@ -236,6 +236,29 @@ class GenerateMusicMixinTests(unittest.TestCase):
             host.calls["_run_generate_music_service_with_progress"]["source_repaint_latents"],
         )
 
+    def test_partial_repaint_preserves_source_in_returned_waveform(self) -> None:
+        """The normal handler splices the selected samples and flags preserved audio."""
+        host = _Host()
+        source = torch.full((2, 6), 0.25)
+        service_inputs = {
+            "repainting_start_batch": [1 / host.sample_rate],
+            "repainting_end_batch": [5 / host.sample_rate],
+            "target_wavs_tensor": source.unsqueeze(0),
+        }
+        with (
+            patch.object(host, "_prepare_reference_and_source_audio",
+                         return_value=(None, source, None)),
+            patch.object(host, "_prepare_generate_music_service_inputs",
+                         return_value=service_inputs),
+        ):
+            result = host.generate_music(captions="cap", lyrics="lyr", task_type="repaint")
+
+        self.assertTrue(result["repaint_preserved_source"])
+        actual = host.calls["_build_generate_music_success_payload"]["pred_wavs"][0]
+        expected = source.clone()
+        expected[:, 2:4] = 1.0
+        torch.testing.assert_close(actual, expected)
+
 
 class VramPreflightCheckTests(unittest.TestCase):
     """Verify ``_vram_preflight_check`` respects CPU offload mode."""

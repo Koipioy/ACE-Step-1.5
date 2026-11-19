@@ -483,6 +483,10 @@ class GenerateMusicMixin:
                 and repainting_start_batch is not None
                 and repainting_end_batch is not None
             )
+            preserve_source = (
+                do_wav_splice and task_type == "repaint" and processed_src_audio is not None
+            )
+            decoded_samples = pred_wavs.shape[-1]
             if do_wav_splice:
                 pred_wavs = apply_repaint_waveform_splice(
                     pred_wavs=pred_wavs,
@@ -491,6 +495,7 @@ class GenerateMusicMixin:
                     repainting_ends=repainting_end_batch,
                     sample_rate=self.sample_rate,
                     crossfade_duration=resolved_wav_cf,
+                    preserve_source=preserve_source,
                 )
             result = self._build_generate_music_success_payload(
                 outputs=outputs,
@@ -503,6 +508,13 @@ class GenerateMusicMixin:
                 retake_seed_value_for_ui=retake_seed_value_for_ui,
                 retake_variance=retake_variance,
             )
+            if preserve_source:
+                source_samples = service_inputs["target_wavs_tensor"].shape[-1]
+                result["repaint_preserved_source"] = decoded_samples < source_samples or any(
+                    round(start * self.sample_rate) > 0
+                    or round(end * self.sample_rate) < source_samples
+                    for start, end in zip(repainting_start_batch, repainting_end_batch)
+                )
             # Clear GPU tensor references from the mutable outputs dict so
             # accelerator memory is reclaimable before the next generation.
             _gpu_keys = (

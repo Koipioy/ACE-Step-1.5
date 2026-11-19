@@ -70,7 +70,8 @@ class GenerationParams:
         duration: Target audio length in seconds. If <0 or None, model chooses automatically. 10 ~ 600
         
         # Audio Post-Processing
-        enable_normalization: Whether to apply loudness normalization to the output audio.
+        enable_normalization: Apply peak normalization to the output audio unless it preserves
+            part of a repaint source.
         normalization_db: Target loudness in dB for normalization (e.g., -1.0 for -1 dBFS peak).
         latent_shift: Additive shift applied to DiT latents before VAE decode (default 0, no shift).
         latent_rescale: Multiplicative rescale applied to DiT latents before VAE decode (default 1.0, no rescale).
@@ -929,6 +930,8 @@ def generate_music(
         dit_audios = result.get("audios", [])
         status_message = result.get("status_message", "")
         dit_extra_outputs = result.get("extra_outputs", {})
+        # Whole-track gain and fades would alter the source samples restored by repaint.
+        repaint_preserved_source = result.get("repaint_preserved_source", False)
 
         # Use the seed list already prepared above (from config.seed or params.seed fallback)
         # actual_seed_list was computed earlier using dit_handler.prepare_seeds
@@ -996,7 +999,11 @@ def generate_music(
             sample_rate = dit_audio.get("sample_rate", 48000)
 
             # --- NORMALIZATION & LOGGING ---
-            if params.enable_normalization and params.normalization_db <= 0.0:
+            if (
+                not repaint_preserved_source
+                and params.enable_normalization
+                and params.normalization_db <= 0.0
+            ):
                  try:
                      peak_before = torch.max(torch.abs(audio_tensor)).item()
                      logger.info(f"[Normalization] Audio {idx} BEFORE: Peak={peak_before:.4f}, Target={params.normalization_db}dB")
@@ -1013,7 +1020,9 @@ def generate_music(
             # -------------------------------
 
             # --- FADE IN / FADE OUT ---
-            if params.fade_in_duration > 0.0 or params.fade_out_duration > 0.0:
+            if not repaint_preserved_source and (
+                params.fade_in_duration > 0.0 or params.fade_out_duration > 0.0
+            ):
                 try:
                     fade_in_samples = round(params.fade_in_duration * sample_rate)
                     fade_out_samples = round(params.fade_out_duration * sample_rate)
