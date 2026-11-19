@@ -10,6 +10,7 @@ import sys
 import types
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock
 
 
 def _load_service_generate_module():
@@ -128,10 +129,12 @@ class ServiceGenerateMixinTests(unittest.TestCase):
         """It forwards runtime tuning controls to downstream helper invocations."""
         host = _Host()
         custom_timesteps = [1.0, 0.5, 0.0]
+        on_diffusion_step = MagicMock()
         host.service_generate(
             captions="cap", lyrics="lyr", guidance_scale=9.5, audio_cover_strength=0.7,
             cover_noise_strength=0.2, use_adg=True, cfg_interval_start=0.1, cfg_interval_end=0.9,
             shift=1.3, infer_method="sde", timesteps=custom_timesteps, return_intermediate=False,
+            on_diffusion_step=on_diffusion_step,
         )
         build_kwargs = host.calls["_build_service_generate_kwargs"]
         self.assertEqual(build_kwargs["guidance_scale"], 9.5)
@@ -145,6 +148,7 @@ class ServiceGenerateMixinTests(unittest.TestCase):
         self.assertEqual(execute_kwargs["infer_method"], "sde")
         self.assertEqual(execute_kwargs["shift"], 1.3)
         self.assertEqual(execute_kwargs["audio_cover_strength"], 0.7)
+        self.assertIs(execute_kwargs["generate_kwargs"]["on_diffusion_step"], on_diffusion_step)
 
 
 if __name__ == "__main__":

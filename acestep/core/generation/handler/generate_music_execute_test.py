@@ -1,6 +1,9 @@
 """Unit tests for ``generate_music`` execution helper mixin."""
 
+import threading
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from acestep.core.generation.handler.generate_music_execute import GenerateMusicExecuteMixin
 
@@ -49,11 +52,10 @@ class _Host(GenerateMusicExecuteMixin):
 class GenerateMusicExecuteMixinTests(unittest.TestCase):
     """Verify progress lifecycle and service forwarding behavior."""
 
-    def test_run_service_with_progress_invokes_service_and_stops_estimator(self):
-        """Helper should call service once and always stop progress estimator."""
-        host = _Host()
-        out = host._run_generate_music_service_with_progress(
-            progress=lambda *args, **kwargs: None,
+    def _run_generation(self, host, progress):
+        """Invoke the normal worker entrypoint with a single sample request."""
+        return host._run_generate_music_service_with_progress(
+            progress=progress,
             actual_batch_size=1,
             audio_duration=10.0,
             inference_steps=8,
@@ -81,10 +83,45 @@ class GenerateMusicExecuteMixinTests(unittest.TestCase):
             shift=1.0,
             infer_method="ode",
         )
+    def test_run_service_with_progress_invokes_service_and_stops_estimator(self):
+        """Helper should call service once and always stop progress estimator."""
+        host = _Host()
+        out = self._run_generation(host, lambda *args, **kwargs: None)
         self.assertTrue(host.started)
         self.assertTrue(host.stopped)
         self.assertEqual(host.service_calls, 1)
         self.assertEqual(out["outputs"]["target_latents"], "ok")
+
+    def test_xl_base_updates_progress_from_completed_steps(self) -> None:
+        """An XL Base callback reports completed work on the Gradio caller thread."""
+        host = _Host()
+        host.model = SimpleNamespace(reports_diffusion_steps=True)
+        progress_delivered = threading.Event()
+        progress_updates = []
+        gradio_thread = threading.get_ident()
+
+        def service_generate(on_diffusion_step=None, **_kwargs):
+            """Wait until the caller observes a completed step."""
+            on_diffusion_step(3, 8)
+            if not progress_delivered.wait(timeout=2):
+                raise AssertionError("The caller did not receive the diffusion progress")
+            return {"target_latents": "ok"}
+
+        def report_progress(value, *, desc):
+            """Capture the step count and the thread delivering the progress update."""
+            progress_updates.append((value, desc, threading.get_ident()))
+            if desc.startswith("Diffusion step"):
+                progress_delivered.set()
+
+        with patch.object(host, "service_generate", side_effect=service_generate):
+            out = self._run_generation(host, report_progress)
+
+        self.assertEqual(out["outputs"]["target_latents"], "ok")
+        self.assertFalse(host.started)
+        value, description, thread = progress_updates[-1]
+        self.assertAlmostEqual(value, 0.62125)
+        self.assertEqual(description, "Diffusion step 3/8 (batch size: 1)")
+        self.assertEqual(thread, gradio_thread)
 
 
 if __name__ == "__main__":

@@ -188,6 +188,13 @@ For AMD GPUs, ROCm support in WSL2 is limited. Consider:
 - Running on native Linux
 - Using Windows with `start_gradio_ui_rocm.bat` / `start_api_server_rocm.bat`
 
+### XL Base generation times out
+
+For PyTorch XL Base, the generation watchdog defaults to 600 seconds without a completed
+diffusion step. Gradio displays completed steps so you can follow long generations.
+Set `ACESTEP_GENERATION_TIMEOUT` in seconds to use a fixed total limit for the generation
+worker. After a timeout, the model accepts another generation once the prior worker exits.
+
 ## GPU-Specific Configuration
 
 ### RX 9070 XT (RDNA3)

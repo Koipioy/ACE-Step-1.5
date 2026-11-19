@@ -2,7 +2,7 @@
 
 import unittest
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import torch
 
@@ -15,14 +15,16 @@ from acestep.models.xl_sft import modeling_acestep_v15_xl_base as xl_sft
 class SdeScheduleTests(unittest.TestCase):
     """Check that each model evaluation receives latents at its declared timestep."""
 
-    def _assert_schedule(self, schedule: list[float], **sampler_kwargs) -> None:
+    def _assert_schedule(
+        self, schedule: list[float], variants: tuple = (base, sft, xl_base, xl_sft), **sampler_kwargs
+    ) -> None:
         """Run the real sampler with a deterministic decoder for straight-line flow."""
         clean = torch.tensor([[[-0.5], [0.25]], [[0.5], [-0.25]]])
         noise = torch.ones_like(clean)
         expected_timesteps = torch.tensor(schedule[:-1])
         expected_latents = torch.lerp(clean, noise, expected_timesteps[:, None, None, None])
 
-        for variant in (base, sft, xl_base, xl_sft):
+        for variant in variants:
             with self.subTest(variant=variant.__name__):
                 model = variant.AceStepConditionGenerationModel
                 host = SimpleNamespace(
@@ -91,3 +93,13 @@ class SdeScheduleTests(unittest.TestCase):
         self._assert_schedule(
             [1.0, 0.9, 0.75, 0.5, 0.0], infer_method="ode", infer_steps=4, shift=3.0
         )
+
+    def test_xl_base_reports_the_effective_step_count(self) -> None:
+        """Progress reports completed steps from the actual custom schedule."""
+        schedule = [1.0, 0.75, 0.4, 0.0]
+        callback = MagicMock()
+        self._assert_schedule(
+            schedule, variants=(xl_base,), infer_steps=32,
+            timesteps=torch.tensor(schedule), on_diffusion_step=callback,
+        )
+        self.assertEqual(callback.call_args_list, [call(1, 3), call(2, 3), call(3, 3)])

@@ -11,7 +11,7 @@ import types
 import unittest
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import torch
 
@@ -171,6 +171,19 @@ class _Host(GenerateMusicMixin):
 
 class GenerateMusicMixinTests(unittest.TestCase):
     """Verify top-level ``generate_music`` orchestration behavior."""
+
+    def test_retry_while_service_worker_runs_stops_before_preparing_audio(self) -> None:
+        """A timed-out worker may still own model state when the user retries."""
+        host = _Host()
+        worker = MagicMock()
+        worker.is_alive.return_value = True
+        host._timed_out_generation_workers = (worker,)
+
+        result = host.generate_music(captions="cap")
+
+        self.assertFalse(result["success"])
+        self.assertIn("timed-out generation is still running", result["error"])
+        self.assertEqual(host.calls, {})
 
     def test_generate_music_returns_success_payload_from_builder(self):
         """It executes helper stages and returns the payload builder result."""

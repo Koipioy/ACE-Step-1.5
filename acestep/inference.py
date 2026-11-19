@@ -22,6 +22,10 @@ import torch
 
 from acestep.audio_utils import AudioSaver, apply_fade, generate_uuid_from_params, normalize_audio, get_lora_weights_hash
 from acestep.constants import BPM_MIN, BPM_MAX, DURATION_MAX, TASK_TYPES, VALID_TIME_SIGNATURES
+from acestep.core.generation.generation_watchdog import (
+    GENERATION_BUSY_MESSAGE,
+    timed_out_generation_running,
+)
 
 # HuggingFace Space environment detection
 IS_HUGGINGFACE_SPACE = os.environ.get("SPACE_ID") is not None
@@ -531,6 +535,14 @@ def generate_music(
     Returns:
         GenerationResult with generated audio files and metadata
     """
+    if timed_out_generation_running(dit_handler):
+        return GenerationResult(
+            audios=[],
+            status_message=f"Error: {GENERATION_BUSY_MESSAGE}",
+            extra_outputs={},
+            success=False,
+            error=GENERATION_BUSY_MESSAGE,
+        )
     try:
         # Phase 1: LM-based metadata and code generation (if enabled)
         # Flow-edit overlay on text2music must use the *VAE encoding* of

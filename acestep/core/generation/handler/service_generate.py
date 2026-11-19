@@ -5,7 +5,7 @@ It coordinates request normalization, batch preparation, diffusion execution,
 and output attachment without owning model internals.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 
@@ -65,6 +65,7 @@ class ServiceGenerateMixin:
         flow_edit_n_min: float = 0.0,
         flow_edit_n_max: float = 1.0,
         flow_edit_n_avg: int = 1,
+        on_diffusion_step: Optional[Callable[[int, int], None]] = None,
     ) -> Dict[str, Any]:
         """Generate music latents and metadata from text/audio conditioning inputs.
 
@@ -76,6 +77,8 @@ class ServiceGenerateMixin:
         layers the V_delta overlay on top of cover/cover-nofsq dispatch.
         ``dcw_enabled=None`` defers to the loaded model family, while an
         explicit boolean overrides that default.
+        ``on_diffusion_step`` receives completed and total step counts for a
+        sampler with live progress support.
 
         Returns:
             Dict[str, Any]: Service output payload containing generated latents,
@@ -147,6 +150,8 @@ class ServiceGenerateMixin:
             retake_seed=retake_seed,
             retake_variance=retake_variance,
         )
+        if on_diffusion_step is not None:
+            generate_kwargs["on_diffusion_step"] = on_diffusion_step
         # flow_edit_ctx activates the V_delta overlay.  Supported on
         # text2music (silence-derived context, clean text-driven V_delta)
         # and cover / cover-nofsq (cover's LM-codes context shared by both

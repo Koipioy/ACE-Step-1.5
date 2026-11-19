@@ -13,6 +13,10 @@ import torch
 from loguru import logger
 
 from acestep.constants import DEFAULT_DIT_INSTRUCTION
+from acestep.core.generation.generation_watchdog import (
+    GENERATION_BUSY_MESSAGE,
+    timed_out_generation_running,
+)
 from acestep.core.generation.handler.repaint_waveform_splice import (
     apply_repaint_waveform_splice,
 )
@@ -286,6 +290,14 @@ class GenerateMusicMixin:
             No exceptions are re-raised. Runtime failures are converted into the
             returned error payload.
         """
+        if timed_out_generation_running(self):
+            return {
+                "audios": [],
+                "status_message": f"Error: {GENERATION_BUSY_MESSAGE}",
+                "extra_outputs": {},
+                "success": False,
+                "error": GENERATION_BUSY_MESSAGE,
+            }
         progress = self._resolve_generate_music_progress(progress)
         if self.model is None or self.vae is None or self.text_tokenizer is None or self.text_encoder is None:
             readiness_error = self._validate_generate_music_readiness()

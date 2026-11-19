@@ -1618,6 +1618,8 @@ class AceStepConditionGenerationModel(AceStepPreTrainedModel):
     (for discrete tokenization), and detokenizer (for reconstruction).
     Supports flow matching training and inference with various sampling methods.
     """
+    reports_diffusion_steps = True
+
     def __init__(self, config: AceStepConfig):
         super().__init__(config)
         self.config = config
@@ -1889,9 +1891,10 @@ class AceStepConditionGenerationModel(AceStepPreTrainedModel):
         dcw_scaler: float = 0.05,
         dcw_high_scaler: float = 0.02,
         dcw_wavelet: str = "haar",
+        on_diffusion_step: Optional[Callable[[int, int], None]] = None,
         **kwargs,
     ):
-        """Generate audio latents by denoising along a diffusion timestep schedule."""
+        """Generate audio latents and report completed diffusion steps when requested."""
         # Backward-compat: accept the old misspelled key "diffusion_guidance_sale"
         # so that callers that have not yet updated their code still work correctly.
         # Note: if both keys are passed simultaneously, the old key wins because Python
@@ -2194,6 +2197,8 @@ class AceStepConditionGenerationModel(AceStepPreTrainedModel):
                     xt = _repaint_step_injection(
                         xt, clean_src_latents, repaint_mask, t_after_step, noise,
                     )
+                if on_diffusion_step is not None:
+                    on_diffusion_step(step_idx + 1, infer_steps)
 
         x_gen = xt
         if repaint_mask is not None and clean_src_latents is not None and repaint_crossfade_frames > 0:
