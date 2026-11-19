@@ -74,18 +74,18 @@ def create_generation_tab_section(
         # variation knobs are next to the source-audio inputs they apply to.
         variation_morph_controls = build_variation_morph_controls()
         cover_controls = build_cover_strength_controls()
-        custom_mode_controls = build_custom_mode_controls()
         repainting_controls = build_repainting_controls()
-        optional_controls = build_optional_parameter_controls(
-            max_duration=max_duration,
-            max_batch_size=max_batch_size,
-            default_batch_size=default_batch_size,
-            service_mode=service_mode,
-        )
+        custom_mode_controls = build_custom_mode_controls()
         generate_controls = build_generate_row_controls(
             service_pre_initialized=service_pre_initialized,
             init_params=init_params,
             lm_initialized=lm_initialized,
+            service_mode=service_mode,
+        )
+        optional_controls = build_optional_parameter_controls(
+            max_duration=max_duration,
+            max_batch_size=max_batch_size,
+            default_batch_size=default_batch_size,
             service_mode=service_mode,
         )
 

@@ -83,7 +83,7 @@ def send_audio_to_remix(audio_file, lm_metadata, current_lyrics, current_caption
     lyrics, caption = _extract_metadata_for_editing(lm_metadata, current_lyrics, current_caption)
     mode_updates = list(compute_mode_ui_updates("Remix", llm_handler, previous_mode=current_mode))
     mode_updates[19] = gr.update(value=caption, visible=True, interactive=True)
-    mode_updates[20] = gr.update(value=lyrics, visible=True, interactive=True)
+    mode_updates[20]["value"] = lyrics
 
     # Pre-fill flow-edit source fields with the prior conditions so the
     # user can use the morph overlay against the previous prompt as V_src
@@ -120,7 +120,7 @@ def send_audio_to_repaint(audio_file, lm_metadata, current_lyrics, current_capti
     lyrics, caption = _extract_metadata_for_editing(lm_metadata, current_lyrics, current_caption)
     mode_updates = list(compute_mode_ui_updates("Repaint", llm_handler, previous_mode=current_mode))
     mode_updates[19] = gr.update(value=caption, visible=True, interactive=True)
-    mode_updates[20] = gr.update(value=lyrics, visible=True, interactive=True)
+    mode_updates[20]["value"] = lyrics
 
     return (
         audio_file, gr.update(value="Repaint"), lyrics, caption,

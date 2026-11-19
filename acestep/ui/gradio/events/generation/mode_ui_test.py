@@ -25,15 +25,18 @@ except Exception as exc:  # pragma: no cover - environment dependency guard
 
 # Output indices for the two new state-clearing outputs
 _IDX_TASK_TYPE = 5       # Index of task_type (gr.State) in compute_mode_ui_updates return tuple
+_IDX_GENERATE_BUTTON = 2
+_IDX_LYRICS = 20
 _IDX_SRC_AUDIO_ROW = 6
 _IDX_AUDIO_CODES = 47
 _IDX_SRC_AUDIO = 48
 _IDX_FLOW_EDIT_COLUMN = 49
 _IDX_FLOW_EDIT_MORPH = 50
+_IDX_MORPH_PANEL = 51
 _IDX_THINK_CHECKBOX = 14
 _IDX_REMIX_STRENGTH = 17
 _IDX_COVER_NOISE = 18
-_EXPECTED_TUPLE_LENGTH = 51
+_EXPECTED_TUPLE_LENGTH = 52
 _IDX_BPM = 21
 _IDX_KEY = 22
 _IDX_TIMESIG = 23
@@ -47,7 +50,7 @@ class ModeUiStateClearingTests(unittest.TestCase):
     """Tests that mode switches clear stale UI state to prevent noise."""
 
     def test_tuple_length(self):
-        """compute_mode_ui_updates should return exactly 51 elements."""
+        """Keep the update count aligned with the wired mode outputs."""
         result = compute_mode_ui_updates("Custom")
         self.assertEqual(len(result), _EXPECTED_TUPLE_LENGTH)
 
@@ -126,13 +129,30 @@ class ModeUiStateClearingTests(unittest.TestCase):
         src_update = result[_IDX_SRC_AUDIO]
         self.assertNotIn("value", src_update)
 
-    def test_repaint_mode_hides_and_disables_edit(self):
-        """Repaint has its own local edit path, so flow-edit should be unavailable."""
+    def test_repaint_mode_hides_and_resets_flow_edit(self):
+        """Collapse the panel so it stays closed when returning to Custom."""
         result = compute_mode_ui_updates("Repaint")
 
         self.assertFalse(result[_IDX_FLOW_EDIT_COLUMN].get("visible"))
         self.assertFalse(result[_IDX_FLOW_EDIT_MORPH].get("visible"))
         self.assertFalse(result[_IDX_FLOW_EDIT_MORPH].get("value"))
+        self.assertFalse(result[_IDX_MORPH_PANEL]["visible"])
+
+    def test_repaint_labels_the_lyrics_and_action(self) -> None:
+        """Make the edited lyrics and the action visibly specific to Repaint."""
+        result = compute_mode_ui_updates("Repaint")
+
+        self.assertEqual(result[_IDX_LYRICS]["label"], "Revised Lyrics")
+        self.assertNotIn("value", result[_IDX_LYRICS])
+        self.assertEqual(result[_IDX_GENERATE_BUTTON]["value"], "Repaint Selection")
+
+    def test_leaving_repaint_restores_the_shared_labels(self) -> None:
+        """Custom mode restores the regular labels on the same components."""
+        result = compute_mode_ui_updates("Custom", previous_mode="Repaint")
+
+        self.assertEqual(result[_IDX_LYRICS]["label"], "Lyrics")
+        self.assertIn("Generate Music", result[_IDX_GENERATE_BUTTON]["value"])
+        self.assertFalse(result[_IDX_MORPH_PANEL]["visible"])
 
     def test_remix_mode_shows_edit(self):
         """Remix keeps the flow-edit overlay available."""
@@ -141,6 +161,7 @@ class ModeUiStateClearingTests(unittest.TestCase):
         self.assertTrue(result[_IDX_FLOW_EDIT_COLUMN].get("visible"))
         self.assertTrue(result[_IDX_FLOW_EDIT_MORPH].get("visible"))
         self.assertTrue(result[_IDX_FLOW_EDIT_MORPH].get("interactive"))
+        self.assertNotIn("visible", result[_IDX_MORPH_PANEL])
 
     def test_round_trip_remix_to_custom_clears_both(self):
         """Switching Remix -> Custom should clear both audio_codes and src_audio.

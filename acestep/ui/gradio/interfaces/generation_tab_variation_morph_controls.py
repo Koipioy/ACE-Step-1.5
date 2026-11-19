@@ -1,11 +1,7 @@
-"""Retake + Edit (flow-edit overlay) controls (#1155, #1156).
+"""Retake and Flow-Edit controls (#1155, #1156).
 
-Two columns inside one ``gr.Accordion`` so each subsystem's panel sits
-directly under its own checkbox.  Both available in Custom / Remix /
-Repaint modes; outer accordion visibility is controlled by ``mode_ui``.
-The ``Copy from current`` button click handler is wired in
-``generation_run_wiring.py`` (kept out of this builder so the captions /
-lyrics components only exist in the wiring scope).
+Each panel sits under its own checkbox. Mode changes show Retake in Custom,
+Remix, and Repaint, and Flow-Edit in Custom and Remix.
 """
 
 from typing import Any
@@ -16,26 +12,12 @@ from acestep.ui.gradio.help_content import create_help_button
 
 
 def build_variation_morph_controls() -> dict[str, Any]:
-    """Build the Retake + Edit accordion.
-
-    Layout (collapsed by default)::
-
-      > Retake & Edit
-          | [ ] Retake (?)                | [ ] Edit (?)                      |
-          |   variance ── seed ──         |   [Copy from current]             |
-          |                               |   source caption ──               |
-          |                               |   source lyrics  ──               |
-          |                               |   n_min  n_max  n_avg             |
-
-    Each checkbox toggles the visibility of the panel directly below it,
-    so the two columns can be expanded independently.  The (?) buttons
-    open modal tutorials for each subsystem.
-    """
+    """Build the independently expandable Retake and Flow-Edit panels."""
 
     with gr.Group() as variation_group:
         with gr.Row(equal_height=False):
             # ---- LEFT column: Retake ----
-            with gr.Column(scale=1, min_width=200) as flow_edit_column:
+            with gr.Column(scale=1, min_width=200):
                 with gr.Row():
                     retake_enabled = gr.Checkbox(
                         label="Retake", value=False, scale=8,
@@ -62,11 +44,11 @@ def build_variation_morph_controls() -> dict[str, Any]:
                         "the full workflow.",
                         visible=False,
                     )
-            # ---- RIGHT column: Edit ----
-            with gr.Column(scale=1, min_width=200):
+            # ---- RIGHT column: Flow-Edit ----
+            with gr.Column(scale=1, min_width=200) as flow_edit_column:
                 with gr.Row():
                     flow_edit_morph = gr.Checkbox(
-                        label="Edit", value=False, scale=8,
+                        label="Flow-Edit", value=False, scale=8,
                     )
                     create_help_button("generation_edit")
                 with gr.Group(visible=False) as morph_panel:

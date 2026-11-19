@@ -155,18 +155,19 @@ Transform existing audio while maintaining its melodic structure but changing st
 
 ### Repaint Mode
 
-Regenerate a specific time segment of audio while keeping the rest intact.
+Regenerate a time range of a song. **Balanced** and **Conservative** preserve the audio
+outside the selection.
 
-**How to use:**
-1. Select **Repaint** in the Generation Mode radio
-2. Upload Source Audio
-3. Set **Repainting Start** and **Repainting End** (seconds; -1 for end of file)
-4. Write a Caption describing the desired content for the repainted section
-5. Click **Generate Music**
+1. Click **Send To Repaint** on a result, or choose **Repaint** and upload **Source Audio**.
+2. Set **Start** and **End** in seconds. Use `-1` to continue through the end of the song.
+3. For a lyric change, select a complete sung phrase. Keep the full song text in
+   **Revised Lyrics** and change the lines inside that phrase. The **Music Caption** describes
+   how the repainted section should sound.
+4. Click **Repaint Selection** below the caption and lyrics.
 
-For a lyric edit, keep the complete song lyrics in **Lyrics** and replace the lines that fall
-inside the selected time range. Select a complete sung phrase. Turn off **Language Auto** and set
-**Vocal Language** to match the lyrics.
+To set the language explicitly, open **Optional Parameters**, turn off **Language Auto**,
+and choose **Vocal Language**. The **Flow-Edit** checkbox in Custom and Remix opens a
+separate tool for morphing a song toward new lyrics or style.
 
 **Use cases:** Fixing problematic sections, changing lyrics in a segment, extending songs.
 

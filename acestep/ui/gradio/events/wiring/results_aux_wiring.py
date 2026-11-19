@@ -83,6 +83,18 @@ def register_results_aux_handlers(
                 generation_section["seed"],
             ]
             + list(mode_ui_outputs),
+        ).success(
+            fn=None,
+            inputs=[results_section[f"generated_audio_{btn_idx}"]],
+            js="""(audio) => {
+                if (audio) {
+                    requestAnimationFrame(() => {
+                        document.getElementById("acestep-source-audio")
+                            ?.scrollIntoView({block: "start"});
+                    });
+                }
+            }""",
+            queue=False,
         )
 
     # ========== Score Calculation Handlers ==========

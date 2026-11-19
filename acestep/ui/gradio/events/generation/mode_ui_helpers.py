@@ -1,5 +1,7 @@
 """Helper functions for generation mode UI update construction."""
 
+from html import escape
+
 import gradio as gr
 
 from acestep.ui.gradio.i18n import t
@@ -112,8 +114,10 @@ def _compute_repainting_labels(is_lego: bool, is_repaint: bool):
             gr.update(label=t("generation.stem_end")),
         )
     if is_repaint:
+        title = escape(t("generation.repainting_controls"))
+        hint = escape(t("generation.repaint_range_hint"))
         return (
-            gr.update(value=f"<h5>{t('generation.repainting_controls')}</h5>"),
+            gr.update(value=f"<h5>{title}</h5><p>{hint}</p>"),
             gr.update(label=t("generation.repainting_start")),
             gr.update(label=t("generation.repainting_end")),
         )

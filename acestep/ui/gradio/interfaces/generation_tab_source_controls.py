@@ -19,7 +19,7 @@ def build_source_audio_controls() -> dict[str, Any]:
         A component map containing ``src_audio_row``, ``src_audio``, ``analyze_btn``, and ``extract_help_group``.
     """
 
-    with gr.Row(equal_height=True, visible=False) as src_audio_row:
+    with gr.Row(equal_height=True, visible=False, elem_id="acestep-source-audio") as src_audio_row:
         src_audio = gr.Audio(label=t("generation.source_audio"), type="filepath", scale=10)
         with gr.Column(scale=1, min_width=80):
             analyze_btn = gr.Button(

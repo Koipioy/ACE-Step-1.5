@@ -30,6 +30,16 @@ class SendAudioToRepaintTests(unittest.TestCase):
         self.assertEqual(True, updates[6]["value"])
         self.assertEqual("-1", updates[7]["value"])
 
+    def test_send_to_repaint_loads_lyrics_in_the_revised_lyrics_field(self) -> None:
+        """Transfer both the song's text and the mode-specific label."""
+        updates = send_audio_to_repaint(
+            "/tmp/generated.wav", {"lyrics": "First line\nSecond line"}, "", "", "Custom"
+        )
+
+        lyrics = updates[8 + 20]
+        self.assertEqual(lyrics["value"], "First line\nSecond line")
+        self.assertEqual(lyrics["label"], "Revised Lyrics")
+
 
 class ConvertResultAudioToCodesTests(unittest.TestCase):
     """Verify generated audio code conversion can reuse sidecar metadata."""

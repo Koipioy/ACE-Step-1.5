@@ -14,7 +14,7 @@ from .mode_ui_helpers import (
 
 
 def compute_mode_ui_updates(mode: str, llm_handler=None, previous_mode: str = "Custom"):
-    """Return the 46-output mode-switch update tuple for generation UI."""
+    """Return mode-switch updates in the order used by build_mode_ui_outputs."""
     task_type = MODE_TO_TASK_TYPE.get(mode, "text2music")
 
     is_simple = (mode == "Simple")
@@ -88,6 +88,8 @@ def compute_mode_ui_updates(mode: str, llm_handler=None, previous_mode: str = "C
         generate_btn_update = gr.update(interactive=generate_interactive, value=t("generation.extract_stem_btn"))
     elif is_lego:
         generate_btn_update = gr.update(interactive=generate_interactive, value=t("generation.add_stem_btn"))
+    elif is_repaint:
+        generate_btn_update = gr.update(interactive=generate_interactive, value=t("generation.repaint_selection_btn"))
     else:
         generate_btn_update = gr.update(interactive=generate_interactive, value=t("generation.generate_btn"))
 
@@ -95,6 +97,7 @@ def compute_mode_ui_updates(mode: str, llm_handler=None, previous_mode: str = "C
     captions_update, lyrics_update, bpm_update, key_scale_update = _compute_field_updates_for_mode(
         is_extract, is_lego, not_simple, leaving_extract_or_lego,
     )
+    lyrics_update["label"] = t("generation.repaint_lyrics_label" if is_repaint else "generation.lyrics_label")
     time_signature_update, vocal_language_update, audio_duration_update = _compute_meta_updates_for_mode(
         is_extract, is_lego, not_simple, leaving_extract_or_lego,
     )
@@ -145,6 +148,10 @@ def compute_mode_ui_updates(mode: str, llm_handler=None, previous_mode: str = "C
         if flow_edit_supported
         else gr.update(visible=False, value=False)
     )
+    # The frontend may discard child updates while the Flow-Edit column is hidden.
+    # Collapse the panel again when returning to a mode that shows the column.
+    keep_morph_panel = flow_edit_supported and previous_mode in ("Custom", "Remix")
+    morph_panel_update = gr.skip() if keep_morph_panel else gr.update(visible=False)
 
     return (
         gr.update(visible=show_simple),                    # 0: simple_mode_group
@@ -186,7 +193,7 @@ def compute_mode_ui_updates(mode: str, llm_handler=None, previous_mode: str = "C
         gr.skip(),                                         # 36: retake_seed
         mode,                                              # 37: previous_generation_mode
         gr.update(visible=is_cover),                       # 38: remix_help_group
-        gr.update(visible=(is_custom or is_cover or is_repaint)),  # 39: variation_group (Retake all 3; Edit honoured in Custom/Remix)
+        gr.update(visible=(is_custom or is_cover or is_repaint)),  # 39: variation_group
         gr.update(visible=(is_extract or is_lego)),        # 40: extract_help_group
         gr.update(visible=is_complete),                    # 41: complete_help_group
         auto_bpm_update,                                   # 42: bpm_auto
@@ -198,6 +205,7 @@ def compute_mode_ui_updates(mode: str, llm_handler=None, previous_mode: str = "C
         src_audio_update,                                  # 48: src_audio
         flow_edit_column_update,                           # 49: flow_edit_column
         flow_edit_morph_update,                            # 50: flow_edit_morph
+        morph_panel_update,                                # 51: morph_panel
     )
 
 
