@@ -34,3 +34,12 @@ class RepaintLayoutTests(unittest.TestCase):
         column = self.controls["flow_edit_column"]
         self.assertIs(self.controls["morph_panel"].parent, column)
         self.assertIsNot(self.controls["retake_panel"].parent, column)
+
+    def test_custom_lyrics_stay_above_flow_edit(self) -> None:
+        """Keep the target prompt ahead of options that can expand vertically."""
+        prompt = self.controls["custom_mode_group"]
+        variation = self.controls["variation_group"]
+
+        self.assertLess(prompt.parent.children.index(prompt), prompt.parent.children.index(variation))
+        self.assertEqual(self.controls["lyrics"].label, "Lyrics")
+        self.assertEqual(self.controls["flow_edit_source_lyrics"].label, "Original Lyrics")

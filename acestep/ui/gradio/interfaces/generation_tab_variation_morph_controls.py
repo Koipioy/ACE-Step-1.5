@@ -9,6 +9,7 @@ from typing import Any
 import gradio as gr
 
 from acestep.ui.gradio.help_content import create_help_button
+from acestep.ui.gradio.i18n import t
 
 
 def build_variation_morph_controls() -> dict[str, Any]:
@@ -57,6 +58,10 @@ def build_variation_morph_controls() -> dict[str, Any]:
                             "Copy current → source",
                             size="sm", scale=0, min_width=180,
                         )
+                        edit_target_lyrics_btn = gr.Button(
+                            t("generation.flow_edit_target_lyrics_btn"),
+                            size="sm", scale=0, min_width=180,
+                        )
                     with gr.Row(equal_height=False):
                         flow_edit_source_caption = gr.Textbox(
                             label="source caption",
@@ -64,8 +69,7 @@ def build_variation_morph_controls() -> dict[str, Any]:
                             lines=4, max_lines=8, scale=1,
                         )
                         flow_edit_source_lyrics = gr.Textbox(
-                            label="source lyrics",
-                            placeholder="Original lyrics; top-level lyrics is the target.",
+                            label=t("generation.flow_edit_original_lyrics_label"),
                             lines=4, max_lines=8, scale=1,
                         )
                     with gr.Row():
@@ -89,6 +93,11 @@ def build_variation_morph_controls() -> dict[str, Any]:
         flow_edit_morph.change(
             lambda v: gr.update(visible=bool(v)),
             inputs=[flow_edit_morph], outputs=[morph_panel],
+        )
+        edit_target_lyrics_btn.click(
+            fn=None,
+            js='() => { document.querySelector("#acestep-lyrics textarea")?.focus(); }',
+            queue=False,
         )
     return {
         "variation_group": variation_group,

@@ -139,6 +139,9 @@ Full control over all generation parameters (text2music).
 6. Configure advanced settings as needed
 7. Click **Generate Music** to create the audio
 
+For Flow-Edit, open **Flow-Edit** below **Generate Music**. Enter the source song's words
+in **Original Lyrics**. **Edit Target Lyrics** takes you to the main **Lyrics** box for the new words.
+
 ### Remix Mode
 
 Transform existing audio while maintaining its melodic structure but changing style.

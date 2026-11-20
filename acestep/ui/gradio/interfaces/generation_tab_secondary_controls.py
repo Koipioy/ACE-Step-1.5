@@ -94,6 +94,7 @@ def build_custom_mode_controls() -> dict[str, Any]:
                             placeholder=t("generation.lyrics_placeholder"),
                             lines=12,
                             max_lines=12,
+                            elem_id="acestep-lyrics",
                         )
                         with gr.Row(elem_classes="instrumental-row"):
                             instrumental_checkbox = gr.Checkbox(
